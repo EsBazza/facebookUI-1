@@ -1,5 +1,7 @@
-const base = 'https://facebookapi-2txh.onrender.com/api/posts';
 
+// Prefer an env-configured base (Vite): set VITE_API_BASE to override in development/production
+// Default to the hosted API /api/posts endpoint
+const base = import.meta.env.VITE_API_BASE || 'https://facebookapi-2txh.onrender.com/api/posts';
 
 async function handleResponse(res) {
   if (!res.ok) {
