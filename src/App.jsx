@@ -3,8 +3,23 @@ import {
   listPosts,
   createPost,
   updatePost,
-  deletePost
+  deletePost,
+  setBaseUrl
 } from './api/posts';
+
+// Set API base at runtime. If your frontend is served from the same origin
+// and the backend is reachable under `/api/posts`, this will make requests
+// same-origin (avoids CORS). Otherwise this simply sets an explicit URL.
+if (typeof window !== 'undefined') {
+  const origin = window.location.origin;
+  if (origin === 'https://facebook-ui-wnda.onrender.com') {
+    // assume a same-origin proxy exists at /api
+    setBaseUrl(origin + '/api/posts');
+  } else {
+    // explicit hosted API (note: cross-origin requests require the API to allow CORS)
+    setBaseUrl('https://facebookapi-2txh.onrender.com/api/posts');
+  }
+}
 import PostList from './components/PostList.jsx';
 import PostForm from './components/PostForm.jsx';
 
@@ -81,7 +96,7 @@ export default function App() {
       </main>
 
       <footer>
-        <small>Dev UI — Vite + React</small>
+        <small>Amaro Juno Alonzo</small>
       </footer>
     </div>
   );
