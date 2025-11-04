@@ -1,4 +1,4 @@
-const base = 'http://localhost:8080/api/posts';
+const base = 'https://facebookapi-2txh.onrender.com/api/posts';
 
 
 async function handleResponse(res) {
