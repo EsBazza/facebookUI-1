@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 
-export default function PostForm({ initial = null, onSubmit, onCancel }) {
+export default function PostForm({ initial = null, onSubmit, onCancel, submitLabel }) {
   const [author, setAuthor] = useState('');
   const [content, setContent] = useState('');
   const [imageUrl, setImageUrl] = useState('');
@@ -77,7 +77,7 @@ export default function PostForm({ initial = null, onSubmit, onCancel }) {
 
       <div className="form-actions">
         <button type="submit" disabled={saving}>
-          {saving ? 'Saving...' : (initial ? 'Update' : 'Create')}
+          {saving ? 'Saving...' : (submitLabel ?? (initial ? 'Update' : 'Create'))}
         </button>
         {initial && (
           <button
