@@ -1,4 +1,5 @@
-const base = '/api/posts';
+const base = 'http://localhost:8080/api/posts';
+
 
 async function handleResponse(res) {
   if (!res.ok) {
