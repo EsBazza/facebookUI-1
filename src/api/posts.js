@@ -1,7 +1,12 @@
 
 // Prefer an env-configured base (Vite): set VITE_API_BASE to override in development/production
-// Default to the hosted API /api/posts endpoint
-const base = import.meta.env.VITE_API_BASE || 'https://facebookapi-2txh.onrender.com/api/posts';
+// Behavior:
+// - If VITE_API_BASE is set, use it (useful for production builds).
+// - In dev (import.meta.env.DEV) default to the relative path '/api/posts' so the Vite
+//   dev server can proxy requests and avoid CORS issues.
+// - Otherwise (production without VITE_API_BASE) fall back to the hosted API URL.
+const base = import.meta.env.VITE_API_BASE
+  || (import.meta.env.DEV ? '/api/posts' : 'https://facebookapi-2txh.onrender.com/api/posts');
 
 async function handleResponse(res) {
   if (!res.ok) {
