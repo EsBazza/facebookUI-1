@@ -1,30 +1,44 @@
 import React, { useEffect, useState } from 'react';
+import {
+  listPosts,
+  createPost,
+  updatePost,
+  deletePost,
+  setBaseUrl
+} from './api/posts';
+
+// Set API base at runtime. If your frontend is served from the same origin
+// and the backend is reachable under `/api/posts`, this will make requests
+// same-origin (avoids CORS). Otherwise this simply sets an explicit URL.
+if (typeof window !== 'undefined') {
+  const origin = window.location.origin;
+  if (origin === 'https://facebook-ui-wnda.onrender.com') {
+    // assume a same-origin proxy exists at /api
+    setBaseUrl(origin + '/api/posts');
+  } else {
+    // explicit hosted API (note: cross-origin requests require the API to allow CORS)
+    setBaseUrl('https://facebookapi-2txh.onrender.com/api/posts');
+  }
+}
 import PostList from './components/PostList.jsx';
 import PostForm from './components/PostForm.jsx';
 
-// Define the base URL for the API
-// Using the facebookapi endpoint per request
-const API_BASE_URL = 'https://facebookapi-2txh.onrender.com';
-
 export default function App() {
   const [posts, setPosts] = useState([]);
-  const [editing, setEditing] = useState(null);
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState('');
+  const [editing, setEditing] = useState(null); // post being edited or null
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
 
   const fetchPosts = async () => {
-    setLoading(true);
-    setError('');
     try {
-      // Use the full URL
-      const res = await fetch(`${API_BASE_URL}/api/posts`);
-      if (!res.ok) throw new Error('Failed to fetch posts');
-      const data = await res.json();
-      // Sort newest first
+      setLoading(true);
+      const data = await listPosts();
+      // sort by createdAt desc if available
       data.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
       setPosts(data);
-    } catch (e) {
-      setError(e.message || 'Error fetching posts');
+    } catch (err) {
+      console.error(err);
+      setError('Failed to load posts');
     } finally {
       setLoading(false);
     }
@@ -34,80 +48,82 @@ export default function App() {
     fetchPosts();
   }, []);
 
-  const handleCreate = async (post) => {
-    // Use the full URL
-    const res = await fetch(`${API_BASE_URL}/api/posts`, {
-      method: 'POST',
-      headers: {'Content-Type': 'application/json'},
-      body: JSON.stringify(post)
-    });
-    if (!res.ok) {
-      const txt = await res.text();
-      throw new Error(txt || 'Create failed');
+  const handleCreate = async (payload) => {
+    try {
+      const saved = await createPost(payload);
+      if (!saved || typeof saved !== 'object') {
+        setError('Save failed: invalid server response');
+        return;
+      }
+      setPosts(prev => [saved, ...prev]);
+      setError(null);
+    } catch (err) {
+      console.error(err);
+      setError(err?.message || 'Failed to save post');
     }
-    const saved = await res.json();
-    setPosts(prev => [saved, ...prev]);
   };
 
-  const handleUpdate = async (id, updates) => {
-    // Use the full URL
-    const res = await fetch(`${API_BASE_URL}/api/posts/${id}`, {
-      method: 'PUT',
-      headers: {'Content-Type': 'application/json'},
-      body: JSON.stringify(updates)
-    });
-    if (!res.ok) throw new Error('Update failed');
-    const updated = await res.json();
-    setPosts(prev => prev.map(p => p.id === updated.id ? updated : p));
-    setEditing(null);
+  const handleUpdate = async (id, payload) => {
+    try {
+      const saved = await updatePost(id, payload);
+      if (!saved || typeof saved !== 'object') {
+        setError('Update failed: invalid server response');
+        return;
+      }
+      setPosts(prev => prev.map(p => (p.id === saved.id ? saved : p)));
+      setEditing(null);
+      setError(null);
+    } catch (err) {
+      console.error(err);
+      setError(err?.message || 'Failed to update post');
+    }
   };
 
   const handleDelete = async (id) => {
-    if (!confirm('Delete this post?')) return;
-    // Use the full URL
-    const res = await fetch(`${API_BASE_URL}/api/posts/${id}`, { method: 'DELETE' });
-    if (!res.ok) {
-      alert('Failed to delete');
-      return;
+    if (!window.confirm('Delete this post?')) return;
+    try {
+      await deletePost(id);
+      setPosts(prev => prev.filter(p => p.id !== id));
+      setError(null);
+    } catch (err) {
+      console.error(err);
+      setError(err?.message || 'Failed to delete post');
     }
-    setPosts(prev => prev.filter(p => p.id !== id));
   };
 
   return (
     <div className="container">
-      <div className="header">
+      <header>
         <h1>Facebook-like Posts</h1>
-        <div className="small-muted">Simple Vite + React UI</div>
-      </div>
+      </header>
 
-      <div className="card">
-        <h3 style={{marginTop:0}}>Create a post</h3>
-        <PostForm onSubmit={handleCreate} submitLabel="Post" />
-      </div>
-
-      {error && <div className="card" style={{borderLeft:'4px solid #ef4444', color:'#b91c1c'}}>{error}</div>}
-
-      {loading ? (
-        <div className="card small-muted">Loading posts...</div>
-      ) : (
-        <PostList
-          posts={posts}
-          onEdit={(p) => setEditing(p)}
-          onDelete={handleDelete}
-        />
-      )}
-
-      {editing && (
-        <div className="card">
-          <h3>Edit post</h3>
+      <main>
+        <section className="form-section">
+          <h2>{editing ? 'Edit post' : 'Create a post'}</h2>
           <PostForm
+            key={editing ? editing.id : 'new'}
             initial={editing}
-            onSubmit={(updates) => handleUpdate(editing.id, updates)}
+            onSubmit={editing ? (payload) => handleUpdate(editing.id, payload) : handleCreate}
             onCancel={() => setEditing(null)}
-            submitLabel="Save"
           />
-        </div>
-      )}
+        </section>
+
+        <section className="list-section">
+          <h2>Posts</h2>
+          {loading && <p>Loading...</p>}
+          {error && <p className="error">{error}</p>}
+          {!loading && posts.length === 0 && <p>No posts yet.</p>}
+          <PostList
+            posts={posts}
+            onEdit={(post) => setEditing(post)}
+            onDelete={(id) => handleDelete(id)}
+          />
+        </section>
+      </main>
+
+      <footer>
+        <small>Amaro Juno Alonzo</small>
+      </footer>
     </div>
   );
 }
