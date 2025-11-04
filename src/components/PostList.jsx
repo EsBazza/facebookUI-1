@@ -32,7 +32,7 @@ export default function PostList({ posts = [], onEdit, onDelete, onUpdate }) {
 
   return (
     <div className="posts">
-      {posts.map((post) => {
+      {posts.filter(p => p && typeof p === 'object').map((post) => {
         const isEditing = editingId === post.id;
         return (
           <article key={post.id} className="post">

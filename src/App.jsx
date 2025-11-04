@@ -49,20 +49,46 @@ export default function App() {
   }, []);
 
   const handleCreate = async (payload) => {
-    const saved = await createPost(payload);
-    setPosts(prev => [saved, ...prev]);
+    try {
+      const saved = await createPost(payload);
+      if (!saved || typeof saved !== 'object') {
+        setError('Save failed: invalid server response');
+        return;
+      }
+      setPosts(prev => [saved, ...prev]);
+      setError(null);
+    } catch (err) {
+      console.error(err);
+      setError(err?.message || 'Failed to save post');
+    }
   };
 
   const handleUpdate = async (id, payload) => {
-    const saved = await updatePost(id, payload);
-    setPosts(prev => prev.map(p => (p.id === saved.id ? saved : p)));
-    setEditing(null);
+    try {
+      const saved = await updatePost(id, payload);
+      if (!saved || typeof saved !== 'object') {
+        setError('Update failed: invalid server response');
+        return;
+      }
+      setPosts(prev => prev.map(p => (p.id === saved.id ? saved : p)));
+      setEditing(null);
+      setError(null);
+    } catch (err) {
+      console.error(err);
+      setError(err?.message || 'Failed to update post');
+    }
   };
 
   const handleDelete = async (id) => {
     if (!window.confirm('Delete this post?')) return;
-    await deletePost(id);
-    setPosts(prev => prev.filter(p => p.id !== id));
+    try {
+      await deletePost(id);
+      setPosts(prev => prev.filter(p => p.id !== id));
+      setError(null);
+    } catch (err) {
+      console.error(err);
+      setError(err?.message || 'Failed to delete post');
+    }
   };
 
   return (
