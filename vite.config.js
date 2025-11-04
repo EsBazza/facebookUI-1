@@ -10,7 +10,18 @@ export default defineConfig({
       '/api': {
         target: 'http://localhost:8080',
         changeOrigin: true,
-        secure: false
+        secure: false,
+        configure: (proxy, options) => {
+          // Ensure the backend sees an Origin header it accepts.
+          // Some CORS filters reject requests when Origin is missing or unexpected.
+          proxy.on('proxyReq', (proxyReq, req, res) => {
+            try {
+              proxyReq.setHeader('origin', 'http://localhost:8080');
+            } catch (e) {
+              // noop
+            }
+          });
+        }
       }
     }
   }

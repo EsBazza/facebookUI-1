@@ -5,8 +5,8 @@ import {
   updatePost,
   deletePost
 } from './api/posts';
-import PostList from './components/PostList';
-import PostForm from './components/PostForm';
+import PostList from './components/PostList.jsx';
+import PostForm from './components/PostForm.jsx';
 
 export default function App() {
   const [posts, setPosts] = useState([]);
