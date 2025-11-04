@@ -11,8 +11,10 @@ export function setBaseUrl(url) {
 }
 
 async function handleResponse(res) {
+  // Read raw text first so we can safely handle empty responses
+  const text = await res.text();
+
   if (!res.ok) {
-    const text = await res.text();
     let msg = text;
     try {
       const json = JSON.parse(text);
@@ -20,12 +22,26 @@ async function handleResponse(res) {
     } catch {}
     throw new Error(msg || res.statusText);
   }
-  return res.status === 204 ? null : res.json();
+
+  // No content
+  if (res.status === 204) return null;
+
+  // Empty body (some endpoints return 200 with empty body) — treat as null
+  if (!text) return null;
+
+  // Try to parse JSON, fallback to raw text
+  try {
+    return JSON.parse(text);
+  } catch (err) {
+    return text;
+  }
 }
 
 export async function listPosts() {
   const res = await fetch(base);
-  return handleResponse(res);
+  const data = await handleResponse(res);
+  // ensure callers get an array for list endpoints
+  return data || [];
 }
 
 export async function getPost(id) {
