@@ -3,12 +3,12 @@
 // In dev default to the relative path so the Vite proxy can forward requests and avoid CORS.
 // In production default to the hosted API endpoint.
 let base = import.meta.env.VITE_API_BASE
-  || (import.meta.env.DEV ? '/api/posts' : 'https://facebookapi-2txh.onrender.com/api/posts');
+  || (import.meta.env.DEV ? '/api/posts' : 'https://facebookapi-2txh.onrender.com/api/posts
 
 export function setBaseUrl(url) {
   if (!url) return;
   base = url.endsWith('/') ? url.slice(0, -1) : url;
-}
+} 
 
 async function handleResponse(res) {
   // Read raw text first so we can safely handle empty responses

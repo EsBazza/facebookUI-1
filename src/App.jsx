@@ -12,7 +12,7 @@ import {
 // same-origin (avoids CORS). Otherwise this simply sets an explicit URL.
 if (typeof window !== 'undefined') {
   const origin = window.location.origin;
-  if (origin === 'https://facebook-ui-wnda.onrender.com') {
+  if (origin === 'https://facebookapi-2txh.onrender.com/api/posts') {
     // assume a same-origin proxy exists at /api
     setBaseUrl(origin + '/api/posts');
   } else {
